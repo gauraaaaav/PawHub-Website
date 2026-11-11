@@ -1,84 +1,92 @@
+
 <?php
 session_start();
-include "includes/db.php";
+include "includes/ecommerce_db.php";
 
 $error = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $email = $conn->real_escape_string($_POST["email"]);
+
+    $email = trim($_POST["email"]);
     $password = $_POST["password"];
 
-    $result = $conn->query("SELECT * FROM users WHERE email = '$email'");
+    // Find user by email
+    $stmt = $conn->prepare(
+        "SELECT * FROM users WHERE email = ?"
+    );
+
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+
+    $result = $stmt->get_result();
     $user = $result->fetch_assoc();
 
-    if ($user && $user["password"] == $password) {
+    // Verify password
+    if ($user && password_verify($password, $user["password"])) {
+
+        session_regenerate_id(true);
+
         $_SESSION["user_id"] = $user["user_id"];
         $_SESSION["full_name"] = $user["full_name"];
         $_SESSION["email"] = $user["email"];
         $_SESSION["role"] = $user["role"];
 
-        if ($user["role"] == "admin") {
-            header("Location: admin.php");
-        } else {
-            header("Location: profile.php");
-        }
+        header("Location: index.php");
         exit;
+
     } else {
-        $error = "Invalid email or password";
+        $error = "Invalid email or password.";
     }
+
+    $stmt->close();
 }
 ?>
 
-<?php include "includes/header.php"; ?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - PawHub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
 
 <div class="form-box">
-    <div class="form-box">
-    <!-- Cute monkey that covers eyes when typing password -->
-    <div class="login-monkey">
-        <img src="images/monkey1.jpg" alt="" id="monkey">
-    </div>
 
-    
-    <h2>Login</h2>
-    <p style="text-align: center; color: #666; margin-bottom: 20px;">Welcome back! Please login to your account.</p>
+    <h1>Welcome Back!</h1>
+    <p>Login to your PawHub account.</p>
 
-    <?php if ($error) { ?>
-        <div class="alert alert-info" style="background-color: #f8d7da; color: #721c24;">
-            <?php echo $error; ?>
-        </div>
-    <?php } ?>
+    <?php if ($error != ""): ?>
+        <p class="alert alert-danger">
+            <?php echo htmlspecialchars($error); ?>
+        </p>
+    <?php endif; ?>
 
-    <form method="POST" action="login.php">
+    <form method="POST">
+
         <div class="form-group">
             <label>Email</label>
             <input type="email" name="email" required>
         </div>
+
         <div class="form-group">
             <label>Password</label>
             <input type="password" name="password" required>
         </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+
+        <button type="submit" class="btn btn-primary">
+            Login
+        </button>
+
     </form>
 
-    <p class="form-foot">
-        Don't have an account? <a href="signup.php">Sign Up</a>
+    <p>
+        Don't have an account?
+        <a href="signup.php">Sign Up</a>
     </p>
 
-    
 </div>
 
-<script>
-    const monkey = document.getElementById('monkey');
-    const passwordField = document.querySelector('input[name="password"]');
-
-    // When user clicks/focuses on password field → cover eyes
-    passwordField.addEventListener('focus', () => {
-        monkey.src = 'images/monkey2.jpg';
-    });
-
-    // When user clicks away → uncover eyes
-    passwordField.addEventListener('blur', () => {
-        monkey.src = 'images/monkey1.jpg';
-    });
-</script>
-<?php include "includes/footer.php"; ?>
+</body>
+</html>
