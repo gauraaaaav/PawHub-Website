@@ -465,6 +465,31 @@ $totalProducts = $result->num_rows;
                                     ? "In Stock: " . $product["stock"]
                                     : "Out of Stock"; ?>
                             </div>
+                            <br>
+
+                            <a href="product-detail.php?id=<?php echo $product['product_id']; ?>"
+                            class="btn">
+                                View Details
+                            </a>
+
+                            <?php if ($product["stock"] > 0): ?>
+
+                                <form action="add-to-cart.php" method="POST">
+
+                                    <input type="hidden" name="product_id"
+                                        value="<?php echo $product['product_id']; ?>">
+
+                                    <input type="hidden" name="quantity" value="1">
+
+                                    <button type="submit" class="btn btn-primary">
+                                        Add to Cart
+                                    </button>
+
+                                </form>
+
+                            <?php endif; ?>
+
+                            
 
                         </div>
 

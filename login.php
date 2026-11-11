@@ -31,8 +31,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION["email"] = $user["email"];
         $_SESSION["role"] = $user["role"];
 
-        header("Location: index.php");
+        $next = $_GET["next"] ?? "";
+
+        if ($next == "checkout") {
+            header("Location: checkout.php");
+        } else {
+            header("Location: index.php");
+        }
         exit;
+        
 
     } else {
         $error = "Invalid email or password.";
