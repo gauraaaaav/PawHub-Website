@@ -1,0 +1,90 @@
+
+<?php
+session_start();
+include "../includes/ecommerce_db.php";
+
+$error = "";
+
+if (isset($_SESSION["user_id"]) && $_SESSION["role"] == "admin") {
+    header("Location: index.php");
+    exit;
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+
+    $email = trim($_POST["email"]);
+    $password = $_POST["password"];
+
+    $stmt = $conn->prepare(
+        "SELECT * FROM users WHERE email = ? AND role = 'admin'"
+    );
+
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
+
+    if ($user && password_verify($password, $user["password"])) {
+
+        session_regenerate_id(true);
+
+        $_SESSION["user_id"] = $user["user_id"];
+        $_SESSION["full_name"] = $user["full_name"];
+        $_SESSION["email"] = $user["email"];
+        $_SESSION["role"] = $user["role"];
+
+        header("Location: index.php");
+        exit;
+
+    } else {
+        $error = "Invalid admin email or password.";
+    }
+
+    $stmt->close();
+}
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Login - PawHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+
+<div class="form-box">
+
+    <h1>PawHub Admin</h1>
+    <p>Login to access the administration panel.</p>
+
+    <?php if ($error != ""): ?>
+        <p class="alert alert-danger">
+            <?php echo htmlspecialchars($error); ?>
+        </p>
+    <?php endif; ?>
+
+    <form method="POST">
+
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email" required>
+        </div>
+
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Admin Login
+        </button>
+
+    </form>
+
+</div>
+
+</body>
+</html>
